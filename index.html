@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>xNULL xcode test</title>
+	<style>body {padding: 50px 10%;}</style>
+
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<!-- xNULL xcode-->
+	<link rel="stylesheet" href="xcode/prism-base.css"/>
+	<link rel="stylesheet" href="xcode/prism-light.css" id="light_theme" />
+	<link rel="stylesheet" href="xcode/prism-dark.css" id="dark_theme" />
+	<link rel="stylesheet" href="xcode/xcode-switch.css"/>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
+	<script src="xcode/prism.js"></script>
+	<script src="xcode/prism-mohaa.js"></script>
+	<script src="xcode/xcode-switch.js"></script>
+	<script type="text/javascript">
+		function selectElementText(el, win) {
+			win = win || window;
+			var doc = win.document, sel, range;
+			if (win.getSelection && doc.createRange) {
+				sel = win.getSelection();
+				range = doc.createRange();
+				range.selectNodeContents(el);
+				sel.removeAllRanges();
+				sel.addRange(range);
+			} else if (doc.body.createTextRange) {
+				range = doc.body.createTextRange();
+				range.moveToElementText(el);
+				range.select();
+			}
+		};
+		$(function() {
+			$('pre').on('dblclick', function(e) {
+				e.preventDefault();
+				selectElementText(e.currentTarget);
+			});
+		});
+	</script>
+	<!-- xNULL xcode-->
+</head>
+<body>
+<h1 style="text-align:center">xNULL xcode test</h1>
+
+<h2>MOHAA</h2>
+<pre class="line-numbers language-scr"><code  class="xcode language-scr">
+/* AUTHOR : Ley0k
+ * DATE : 19/05/2013
+ *
+ * This script will be released on https://www.x-null.net/forums/forum.php
+ *
+ * A few part of code were taken from a cheat program which shouldn't be told
+ *
+ * Any suggestions/code correction/ideas will be appreciated
+ *
+ */
+
+main:
+end
+
+/* dotproduct
+ *
+ * Internal use only
+ */
+dotproduct local.x local.y:
+end (local.x[0]*local.y[0]+local.x[1]*local.y[1]+local.x[2]*local.y[2])
+
+/* anglevectors
+ *
+ * Internal use only
+ */
+anglevectors local.angles:
+
+	if(level.PI == NIL)
+		level.PI = 3.1415926
+
+	local.angle = ( ( (local.angles[1]) * level.PI ) / 180.0 )
+	local.sy = sin local.angle
+	local.cy = cos local.angle
+
+	local.angle = ( ( (local.angles[0]) * level.PI ) / 180.0 )
+	local.sp = sin local.angle
+	local.cp = cos local.angle
+
+	local.angle = ( ( (local.angles[2]) * level.PI ) / 180.0 )
+	local.sr = sin local.angle
+	local.cr = cos local.angle
+
+	local.result[0] = ( 0 0 0 )
+	local.result[1] = ( 0 0 0 )
+	local.result[2] = ( 0 0 0 )
+
+	local.forward = ( 0 0 0 )
+	local.right = ( 0 0 0 )
+	local.up = ( 0 0 0 )
+
+	if(local.forward != NIL)
+	{
+		local.forward[0] = local.cp * local.cy
+		local.forward[1] = local.cp * local.sy
+		local.forward[2] = -local.sp
+	}
+
+	if(local.right != NIL)
+	{
+		local.right[0] = ( -1 * local.sr * local.sp * local.cy + -1 * local.cr * -local.sy )
+		local.right[1] = ( -1 * local.sr * local.sp * local.sy + -1 * local.cr * local.cy )
+		local.right[2] = -1 * local.sr * local.cp
+	}
+
+	if(local.up != NIL)
+	{
+		local.up[0] = ( local.cr * local.sp * local.cy + -local.sr * -local.sy )
+		local.up[1] = ( local.cr * local.sp * local.sy + -local.sr * local.cy )
+		local.up[2] = local.cr * local.cp
+	}
+
+	local.result[0] = ( local.forward[0] local.forward[1] local.forward[2] )
+	local.result[1] = ( local.right[0] local.right[1] local.right[2] )
+	local.result[2] = ( local.up[0] local.up[1] local.up[2] )
+
+end local.result
+
+/* worldtoscreen
+ *
+ * a player must be specified when calling it (like local.player thread global/huddraw_3d.scr::worldtoscreen)
+ *
+ * convert a vector (origin) to a screen rectangle
+ *
+ * result :
+ *          returns an array : [0] is the screenX, [1] is the screenY and [2] specify whether if the origin can be shown or not from the player's view
+ */
+worldtoscreen local.origin:
+	if(local.origin == NIL)
+	{
+		iprintln "^~^~^ local.origin is NIL !"
+		end
+	}
+
+	if(self == NULL || self == NIL)
+	{
+		if(self == NULL)
+			iprintln "^~^~^ self is NULL, self must be a player !"
+		else
+			iprintln "^~^~^ self is NIL, self must be a player !"
+		end
+	}
+
+	local.vfwd = ( 0 0 0 )
+	local.vright = ( 0 0 0 )
+	local.vup = ( 0 0 0 )
+	local.transformed = ( 0 0 0 )
+
+	local.rect[0] = 0
+	local.rect[1] = 0
+	local.rect[2] = 0
+
+	local.result = waitthread anglevectors self.viewangles
+
+	local.vfwd = local.result[0]
+	local.vright = local.result[1]
+	local.vup = local.result[2]
+
+	local.origin2 = vector_subtract local.origin ( self gettagposition "eyes bone" )
+
+	local.transformed[0] = waitthread dotproduct local.origin2 local.vright
+	local.transformed[1] = waitthread dotproduct local.origin2 local.vup
+	local.transformed[2] = waitthread dotproduct local.origin2 local.vfwd
+
+	if(local.transformed[2] < 0.01)
+	{
+		local.rect[2] = 1 // 1 = not shown
+
+		local.transformed[0] = -local.transformed[0]
+		local.transformed[1] = -local.transformed[1]
+	}
+
+	local.centerX = 640 / 2 // currently using 640*480 for huddraw
+	local.centerY = 480 / 2
+
+	local.xzi		= local.centerX / local.transformed[2] * ( 90.0 / 80 ) // 80 is the default fov in multiplayer
+	local.yzi		= local.centerY / local.transformed[2] * ( 90.0 / 60 )
+
+	local.rect[0]	= ( local.xzi * local.transformed[0] )
+	local.rect[1]	= ( local.yzi * -local.transformed[1] )
+
+	if(local.rect[2] == 1)
+	{
+		if(local.rect[1] < ( 480 / 2))
+			local.rect[1] = ( 480 / 2 )
+		else if(local.rect[1] > ( -480 / 2))
+			local.rect[1] = ( -480 / 2 )
+		else if(local.rect[1] < ( 640 / 2))
+			local.rect[0] = ( 640 / 2 )
+		else if(local.rect[0] > ( -640 / 2 ))
+			local.rect[0] = ( -640 / 2 )
+	}
+
+	if(local.rect[0] > ( 640 / 2))
+		local.rect[0] = ( 640 / 2)
+	else if(local.rect[0] < ( -640 / 2))
+		local.rect[0] = ( -640 / 2)
+
+	if(local.rect[1] > ( 480 / 2))
+		local.rect[1] = ( 480 / 2)
+	else if(local.rect[1] < ( -480 / 2))
+		local.rect[1] = ( -480 / 2)
+
+end local.rect
+
+/* point_frame
+ *
+ * Internal use only
+ */
+point_frame local.id:
+
+	while(1)
+	{
+		if(self == NULL || self == NIL)
+			end
+
+		local.origin			= self.point[local.id]["origin"]
+		local.offset			= self.point[local.id]["offset"]
+		local.entity			= self.point[local.id]["entity"]
+		local.string			= self.point[local.id]["string"]
+		local.font				= self.point[local.id]["font"]
+		local.shader			= self.point[local.id]["shader"]
+		local.ignoredistance	= self.point[local.id]["ignoredistance"]
+		local.sizeX				= self.point[local.id]["sizeX"]
+		local.sizeY				= self.point[local.id]["sizeY"]
+		local.delay				= self.point[local.id]["refreshdelay"]
+
+		if(local.origin == NIL)
+		{
+			// local.origin is NIL, this mean that we should clean up and remove the point
+			ihuddraw_font self local.id ""
+			ihuddraw_shader self local.id ""
+			ihuddraw_string self local.id ""
+
+			ihuddraw_rect self local.id 0 0 0 0
+			ihuddraw_virtualsize self local.id 0
+			ihuddraw_color self local.id 0.0 0.0 0.0
+			ihuddraw_alpha self local.id 0.0
+
+			end
+		}
+
+		if(local.entity != NIL)
+		{
+			local.origin = local.entity.origin + local.offset
+			self.point[local.id]["origin"] = local.origin
+		}
+
+		local.rect = self waitthread worldtoscreen ( local.origin )
+
+		if(!local.ignoredistance)
+		{
+			// calculate the distance from the player origin to the point origin
+			local.dist = vector_length (self.origin - (local.origin))
+
+			if(local.rect[2] == 0)
+				local.dist_screen = 16384 / local.dist // 16384 is the maximum limit of a BSP map
+		}
+
+		if(local.string == NIL)
+			ihuddraw_shader self local.id local.shader
+		else if(local.shader == NIL)
+		{
+			ihuddraw_font self local.id local.font
+			ihuddraw_string self local.id local.string
+		}
+
+		if(!local.ignoredistance && local.rect[2] == 0)
+			ihuddraw_rect self local.id local.rect[0] local.rect[1] local.dist_screen local.dist_screen
+		else
+			ihuddraw_rect self local.id local.rect[0] local.rect[1] local.sizeX local.sizeY
+		ihuddraw_virtualsize self local.id 1
+		ihuddraw_color self local.id 1 1 1
+		ihuddraw_alpha self local.id 1
+
+		if(local.delay == "frame")
+			waitframe
+		else
+			wait local.delay
+	}
+end
+
+/* check_huddraw_parameters
+ *
+ * Internal use only
+ */
+check_huddraw_parameters local.player local.id local.origin local.string local.shader:
+	if(local.id == NIL)
+	{
+		iprintln "^~^~^ local.id is NIL !"
+		end 0
+	}
+
+	if(local.string == NIL && local.shader == NIL)
+	{
+		iprintln "^~^~^ both local.string and local.shader are NIL, one must be specified !"
+		end 0
+	}
+
+	if(local.player == NULL || local.player == NIL)
+	{
+		if(local.player == NULL)
+			iprintln "^~^~^ Player (self) is NULL, a player must be specified !"
+		else
+			iprintln "^~^~^ Player (self) is NIL, a player must be specified !"
+		end 0
+	}
+end 1
+
+/* is_point_id_exists
+ *
+ * parameters :
+ *              local.id : identifier of the huddraw element point
+ *              local.debugmsg : specify whether to show a debug message if the id cannot be found
+ *
+ * result :
+ *           returns 1 if the id exists, 0 otherwise
+ */
+is_point_id_exists local.id local.debugmsg:
+
+	if(local.debugmsg == NIL)
+		local.debugmsg = 1
+
+	if(local.id == NIL)
+	{
+		if(local.debugmsg)
+			iprintln "^~^~^ local.id is NIL !"
+
+		end 0
+	}
+
+	if(self.point[local.id] == NIL)
+	{
+		if(local.debugmsg)
+			iprintln("^~^~^ the player " + self.entnum + " doesn't have the point id " + local.id + " !")
+
+		end 0
+	}
+
+end 1
+
+/* add3dpoint : show a 3D icon in-game for a player
+ *
+ * a player must be specified when calling it (like local.player thread global/huddraw_3d.scr::add3dpoint)
+ *
+ * parameters :
+ *             local.id : identifier of the huddraw element
+ *             local.origin : point origin. If local.entity is specified local.origin will be the vector offset for the point from the specified entity
+ *             local.string : like the (not working) print3d, it show a string in this location (but is forced to ignore the distance)
+ *             local.font [OPTIONAL] : Font to use if local.string is specified. This parameter will be ignored if local.string is not specified. The default font is "facfont-20".
+ *             local.shader : shader to show at the origin
+ *             local.ignoredistance : if set to 1, the shader will not be auto-sized from the player relative to the point's and local.sizeX and local.sizeY must be specified
+ *             local.sizeX : width size of the shader (default 32)
+ *             local.sizeY : height size of the shader (default 32)
+ *             local.refreshdelay : a number that specify how much to wait before refreshing. Setting "frame" will refresh each server frame. (default "frame")
+ *             local.entity [OPTIONAL] : entity to follow. If this parameter is specified, local.origin will be the vector offset for the point from the specified entity
+ *
+ * remarks :
+ *           local.string and local.shader mustn't be specified both
+ *           local.sizeX and local.sizeY can be specified only if local.ignoredistance isn't set to 0
+ *
+ * result :
+ *           returns 1 on success, 0 otherwise
+ *
+ */
+add3dpoint local.id local.origin local.string local.font local.shader local.ignoredistance local.sizeX local.sizeY local.refreshdelay local.entity:
+
+	local.result = waitthread check_huddraw_parameters self local.id local.origin local.string local.shader
+
+	if(local.result == 0)
+		end 0
+
+	local.result = self waitthread is_point_id_exists local.id 0
+
+	// fail if this point id already exists
+	if(local.result)
+	{
+		iprintln("^~^~^ the player " + self.entnum + " already have this point ID " + local.id + " ! Use the change3dpoint functions")
+		end 0
+	}
+
+	if(local.origin == NIL)
+		local.origin = ( 0 0 0 )
+
+	if(local.font == NIL)
+		local.font = "facfont-20"
+
+	if(local.ignoredistance == NIL)
+		local.ignoredistance = 0
+
+	if(local.sizeX == NIL || local.sizeX <= 0)
+		local.sizeX = 32
+
+	if(local.sizeY == NIL || local.sizeY <= 0)
+		local.sizeY = 32
+
+	if(local.refreshdelay == NIL || (local.refreshdelay != "frame" && local.refreshdelay <= 0))
+		local.refreshdelay = "frame"
+
+	self.point[local.id]["origin"]			= local.origin
+	self.point[local.id]["offset"]			= local.origin
+	self.point[local.id]["entity"]			= local.entity
+	self.point[local.id]["string"]			= local.string
+	self.point[local.id]["font"]			= local.font
+	self.point[local.id]["shader"]			= local.shader
+	self.point[local.id]["ignoredistance"]	= local.ignoredistance
+	self.point[local.id]["sizeX"]			= local.sizeX
+	self.point[local.id]["sizeY"]			= local.sizeY
+	self.point[local.id]["refreshdelay"]	= local.refreshdelay
+
+	self thread point_frame local.id
+end 1
+
+/*
+ * change3dpoint_X : change a 3D point property for a player
+ *
+ * available functions :
+ *
+ * change3dpoint_origin 		-> params : ( Integer ID, Vector origin )
+ * change3dpoint_string 		-> params : ( Integer ID, String string )
+ * change3dpoint_font			-> params : ( Integer ID, String font )
+ * change3dpoint_shader			-> params : ( Integer ID, String shader )
+ * change3dpoint_ignoredistance -> params : ( Integer ID, Boolean ignore_distance )
+ * change3dpoint_size			-> params : ( Integer ID, Integer sizeX, Integer sizeY )
+ * change3dpoint_refreshdelay	-> params : ( Integer ID, Integer refreshdelay )
+ *
+ * See add3dpoint documentation for more informations on what these functions can do
+ *
+ * returns 1 on success, 0 otherwise
+ */
+
+change3dpoint_origin local.id local.origin:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.origin == NIL)
+		local.origin = ( 0 0 0 )
+
+	self.point[local.id]["origin"]			= local.origin
+	self.point[local.id]["offset"]			= local.origin
+end 1
+
+change3dpoint_string local.id local.string:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	self.point[local.id]["string"] = local.string
+end 1
+
+change3dpoint_font local.id local.font:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.font == NIL)
+		local.font = "facfont-20"
+
+	self.point[local.id]["font"] = local.string
+end 1
+
+change3dpoint_shader local.id local.shader:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	self.point[local.id]["shader"] = local.shader
+end 1
+
+change3dpoint_ignoredistance local.id local.ignoredistance:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.ignoredistance == NIL)
+		local.ignoredistance = 0
+
+	self.point[local.id]["ignoredistance"] = local.ignoredistance
+end 1
+
+change3dpoint_size local.id local.sizeX local.sizeY:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.sizeX == NIL || local.sizeX <= 0)
+		local.sizeX = 32
+
+	if(local.sizeY == NIL || local.sizeY <= 0)
+		local.sizeY = 32
+
+	self.point[local.id]["ignoredistance"] = local.ignoredistance
+end 1
+
+change3dpoint_refreshdelay local.id local.refreshdelay:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.refreshdelay == NIL || local.refreshdelay <= 0)
+		local.refreshdelay = "frame"
+
+	self.point[local.id]["refreshdelay"] = local.refreshdelay
+end 1
+
+/* change3dpoint_followent
+ *
+ * setting local.entity to NIL or NULL will make the point stop following the entity
+ */
+
+change3dpoint_followent local.id local.entity:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	if(local.entity == NULL)
+		local.entity = NIL
+
+	self.point[local.id]["entity"] = local.entity
+end 1
+
+/* remove3dpoint : remove a 3D point from a player
+ *
+ * parameters :
+ *              local.id : 3D point id to remove from the player
+ *
+ * returns 1 on success, 0 otherwise
+ */
+remove3dpoint local.id:
+
+	local.result = self waitthread is_point_id_exists local.id
+
+	if(!local.result)
+		end 0
+
+	self.point[local.id]["origin"]			= NIL
+	self.point[local.id]["offset"]			= NIL
+	self.point[local.id]["string"]			= NIL
+	self.point[local.id]["shader"]			= NIL
+	self.point[local.id]["ignoredistance"]	= NIL
+	self.point[local.id]["sizeX"]			= NIL
+	self.point[local.id]["sizeY"]			= NIL
+	self.point[local.id]["refreshdelay"]	= NIL
+
+	self.point[local.id]					= NIL
+end 1
+
+</code></pre>
+<br>
+<h2>Javascript</h2>
+<pre class="line-numbers language-javascript">
+	<code class=" language-javascript">
+console.log("Hello World");
+	</code>
+</pre>
+<br>
+<pre class="line-numbers language-javascript">
+	<code class=" language-javascript">
+Prism.plugins.toolbar.registerButton('hello-world', {
+	text: 'Hello World!', // required
+	onClick: function (env) { // optional
+		alert('This code snippet is written in ' + env.language + '.');
+	}
+});
+// COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT COMMENT
+	</code>
+</pre>
+<br>
+<h2>C++</h2>
+<pre class="line-numbers"><code  class="xcode language-cpp">
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "MHC-cache.h"
+#include <ctime>
+#include <fstream>
+#include <sys/stat.h>
+
+//HWND pleaseWait = FindWindow("TfrmWait", "Please Wait...");
+//HWND cancelButton = FindWindowEx( pleaseWait, NULL, NULL, "Cancel" );
+
+DWORD DetourPatchcall( PBYTE pSrc, PBYTE pDst, BOOL bForce )
+{
+	DWORD dwOrgCallDest = 0;
+	DWORD dwOldProtection = 0;
+	DWORD dwRel = 0;
+
+	if(!pSrc || !pDst)
+		return (0);
+
+	if( *pSrc == 0xE8 || bForce )
+	{
+		if( *pSrc == 0xE8 )
+		{
+			dwRel = *(DWORD*)( pSrc + 1 );
+			dwOrgCallDest = ( (DWORD)pSrc + dwRel + 0x5 );
+		}
+		else
+		{
+			dwOrgCallDest = 1; // return 1 means no original call at pSrc
+		}
+
+		#ifdef WIN32
+
+			if( !VirtualProtect( (PVOID)pSrc, 0x1000, PAGE_EXECUTE_READWRITE, &dwOldProtection ) )
+				return (0);
+
+		#else
+
+			unprotect( GET_PAGE( pSrc ), 4096 );
+
+		if ( ( ( (unsigned long)pSrc ) & 0xfff ) > 0xff9 )
+			unprotect( GET_PAGE( pSrc + 4096 ), 4096 );
+
+		#endif
+
+		*pSrc = 0xE8;
+		*( DWORD* )( pSrc + 1 ) = (DWORD)( pDst - pSrc - 5 );
+
+		#ifdef WIN32
+			VirtualProtect( (PVOID)pSrc, 0x1000, dwOldProtection, &dwOldProtection );
+		#endif
+
+		return dwOrgCallDest;
+	}
+	return (0);
+}
+
+//This function is called for users that toggle between host and field mode ONLY
+void __stdcall callMaintenanceForHostAndField()
+{
+	HWND pleaseWait = FindWindow("TfrmWait", "Please Wait...");
+	HWND cancelButton = FindWindowEx( pleaseWait, NULL, NULL, "Cancel" );
+
+	WriteMemory( ForceCacheMaintenanceOnExitAddress, (BYTE*)"\xEB", 1 ); //0x01C9CBEA
+
+	_asm
+	{
+		pushad
+		pushfd
+		mov edx, OffsetForHostAndField //0x1C7C4C0
+		call edx
+		xor ecx, ecx
+		mov dl, 0
+		mov ebx, callMaintenanceForHostAndFieldAddress //0x01C9CB54
+		call ebx
+		popfd
+		popad
+	}
+
+	Sleep(250);
+
+	// Simulate a key press
+	keybd_event( VK_RETURN, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0 );
+
+	// Simulate a key release
+	keybd_event( VK_RETURN, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+
+	//Hide the Cancel button on the cache maintenance screen
+	if(cancelButton)
+		ShowWindow(cancelButton, SW_HIDE);
+}
+</code></pre>
+</body>
+</html>
